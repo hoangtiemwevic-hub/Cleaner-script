@@ -129,6 +129,13 @@ export default function App() {
         setError('');
     };
 
+    /**
+     * Helper to apply automatic fixes like "911" -> "9 1 1"
+     */
+    const applyAutoFixes = (text: string): string => {
+        return text.replace(/911/g, '9 1 1');
+    };
+
     const analyzeFile = () => {
         if (!textContent.trim()) {
             setError("Vui lòng nhập nội dung cần lọc.");
@@ -161,9 +168,13 @@ export default function App() {
                     const isHighlight = highlightRegex.test(sub.text);
                     const isNote = shouldExclude(sub.text);
 
-                    if (isHighlight) highlights.push(sub);
-                    else if (isNote) notes.push(sub);
-                    else cleanSubs.push(sub);
+                    if (isHighlight) {
+                        highlights.push({ ...sub, text: applyAutoFixes(sub.text) });
+                    } else if (isNote) {
+                        notes.push({ ...sub, text: applyAutoFixes(sub.text) });
+                    } else {
+                        cleanSubs.push({ ...sub, text: applyAutoFixes(sub.text) });
+                    }
                 });
                 setAnalysisResult({ 
                     highlights, 
@@ -182,14 +193,15 @@ export default function App() {
                         return;
                     }
 
-                    const subStub: Subtitle = { index: index + 1, startTime: '', endTime: '', text };
+                    const fixedText = applyAutoFixes(text);
+                    const subStub: Subtitle = { index: index + 1, startTime: '', endTime: '', text: fixedText };
                     
                     if (highlightRegex.test(text)) {
                         highlights.push(subStub);
                     } else if (shouldExclude(text)) {
                         notes.push(subStub);
                     } else {
-                        cleanLines.push(line);
+                        cleanLines.push(fixedText);
                     }
                 });
 
@@ -221,7 +233,7 @@ export default function App() {
             <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Làm Sạch Kịch Bản</h1>
-                    <p className="mt-2 text-slate-500 dark:text-slate-400">Tự động loại bỏ Timecodes, Ghi chú và các thành phần thừa trong văn bản.</p>
+                    <p className="mt-2 text-slate-500 dark:text-slate-400">Tự động loại bỏ Timecodes, Ghi chú và tự động sửa các lỗi đọc số (911 → 9 1 1).</p>
                 </div>
 
                 <div className="flex flex-col gap-6">
